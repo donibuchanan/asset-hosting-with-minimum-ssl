@@ -1,11 +1,17 @@
 class AssetHostingWithMinimumSsl
-  attr_accessor :asset_host, :ssl_asset_host
+  attr_accessor :asset_host, :ssl_asset_host, :options
   
-  def initialize(asset_host, ssl_asset_host)
-    self.asset_host, self.ssl_asset_host = asset_host, ssl_asset_host
+  def initialize(asset_host, ssl_asset_host, options={})
+    self.asset_host, self.ssl_asset_host,self.options = asset_host, ssl_asset_host, options
   end
   
   def call(source, request)
+    if options[:only] and (source =~ options[:only]).nil?
+      return ''
+    end
+    if options[:except] and !(source =~ options[:except]).nil?
+      return ''
+    end
     if request.ssl?
       case
       when javascript_file?(source)
