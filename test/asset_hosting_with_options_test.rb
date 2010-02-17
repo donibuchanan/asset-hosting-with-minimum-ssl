@@ -8,13 +8,16 @@ require 'asset_hosting_with_minimum_ssl'
 
 class AssetHostingWithOptionsTest < Test::Unit::TestCase
   def setup
-    @asset_host = AssetHostingWithMinimumSsl.new("http://assets%d.example.com/", "https://assets1.example.com/", :only=>/^\/images\//, :except=>/^\/images\/local/)
+    @asset_host = AssetHostingWithMinimumSsl.new("http://assets%d.example.com/", "https://assets1.example.com/", :only=>[/^\/images\//, /^\/stylesheets\//], :except=>/^\/images\/local/)
   end
   
   def test_ssl_request_for_matching_path
     assert_match \
       ssl_host, 
       @asset_host.call("/images/image.jpg", ssl_request_from('IE'))
+    assert_match \
+      ssl_host, 
+      @asset_host.call("/stylesheets/main.css", ssl_request_from('IE'))
   end
 
   def test_no_asset_path_for_non_matching_path
@@ -24,7 +27,7 @@ class AssetHostingWithOptionsTest < Test::Unit::TestCase
 
     assert_equal \
       '', 
-      @asset_host.call("/stylesheets/application.css", ssl_request_from("Safari"))
+      @asset_host.call("/non_asset_stylesheet/application.sdg", ssl_request_from("Safari"))
   end
 
   private

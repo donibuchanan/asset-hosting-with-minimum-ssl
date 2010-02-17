@@ -1,17 +1,17 @@
 class AssetHostingWithMinimumSsl
-  attr_accessor :asset_host, :ssl_asset_host, :options
+  attr_accessor :asset_host, :ssl_asset_host, :only, :except
   
   def initialize(asset_host, ssl_asset_host, options={})
-    self.asset_host, self.ssl_asset_host,self.options = asset_host, ssl_asset_host, options
+    self.asset_host, self.ssl_asset_host = asset_host, ssl_asset_host
+    if options[:only]
+      self.only = Regexp.union(options[:only])
+    end
+    if options[:except]
+      self.except = Regexp.union(options[:except])
+    end
   end
   
   def call(source, request)
-    if options[:only] and (source =~ options[:only]).nil?
-      return ''
-    end
-    if options[:except] and !(source =~ options[:except]).nil?
-      return ''
-    end
     if request.ssl?
       case
       when javascript_file?(source)
@@ -31,13 +31,22 @@ class AssetHostingWithMinimumSsl
   
   private
     def asset_host(source)
+      return '' if no_asset_source(source)
       @asset_host % (source.hash % 4)
     end
 
     def ssl_asset_host(source)
+      return '' if no_asset_source(source)
       @ssl_asset_host % (source.hash % 4)
     end
 
+    def no_asset_source(source)
+      if only and (source =~ only).nil?
+        true
+      elsif except and !(source =~ except).nil?
+        true
+      end
+    end    
 
     def javascript_file?(source)
       source =~ /\.js$/
